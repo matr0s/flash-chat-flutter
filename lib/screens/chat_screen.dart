@@ -13,7 +13,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final _fireStore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
   User logedInUser;
-  String message;
+  String messageText;
 
   @override
   void initState() {
@@ -26,10 +26,28 @@ class _ChatScreenState extends State<ChatScreen> {
       final user = await _auth.currentUser;
       if (user != null) {
         logedInUser = user;
-        //print(logedInUser.email);
       }
     } catch (e) {
       print(e);
+    }
+  }
+
+  // void getMessages() async {
+  //   try {
+  //     final messages = await _fireStore.collection('messages').get();
+  //     for (var message in messages.docs) {
+  //       print(message.data());
+  //     }
+  //   } catch (e) {
+  //     print(e);
+  //   }
+  // }
+
+  void messageStream() async {
+    await for (var snapshot in _fireStore.collection('messages').snapshots()) {
+      for (var message in snapshot.docs) {
+        print(message.data());
+      }
     }
   }
 
@@ -42,8 +60,9 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(
               icon: Icon(Icons.close),
               onPressed: () {
-                _auth.signOut();
-                Navigator.pop(context);
+                messageStream();
+                // _auth.signOut();
+                // Navigator.pop(context);
                 //Implement logout functionality
               }),
         ],
@@ -63,7 +82,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Expanded(
                     child: TextField(
                       onChanged: (value) {
-                        message = value;
+                        messageText = value;
                       },
                       decoration: kMessageTextFieldDecoration,
                     ),
@@ -72,7 +91,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     onPressed: () async {
                       try {
                         await _fireStore.collection('messages').add(
-                            {'test': message, 'sender': logedInUser.email});
+                            {'test': messageText, 'sender': logedInUser.email});
                       } catch (e) {
                         print(e);
                       }
