@@ -35,25 +35,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  // void getMessages() async {
-  //   try {
-  //     final messages = await _fireStore.collection('messages').get();
-  //     for (var message in messages.docs) {
-  //       print(message.data());
-  //     }
-  //   } catch (e) {
-  //     print(e);
-  //   }
-  // }
-
-  void messageStream() async {
-    await for (var snapshot in _fireStore.collection('messages').snapshots()) {
-      for (var message in snapshot.docs) {
-        print(message.data());
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,7 +76,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     onPressed: () async {
                       try {
                         await _fireStore.collection('messages').add(
-                            {'test': messageText, 'sender': logedInUser.email});
+                            {'text': messageText, 'sender': logedInUser.email});
                         messageTextController.clear();
                       } catch (e) {
                         print(e);
@@ -130,10 +111,10 @@ class MessagesStream extends StatelessWidget {
             ),
           );
         } else {
-          final messages = snapshot.data.docs;
+          final messages = snapshot.data.docs.reversed;
           List<MessageBubble> messageBubbles = [];
           for (var message in messages) {
-            final messageText = message.data()['test'];
+            final messageText = message.data()['text'];
             final messageSender = message.data()['sender'];
             final currentUser = logedInUser.email;
 
@@ -146,6 +127,7 @@ class MessagesStream extends StatelessWidget {
           }
           return Expanded(
             child: ListView(
+              reverse: true,
               padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
               children: messageBubbles,
             ),
@@ -161,19 +143,14 @@ class MessageBubble extends StatelessWidget {
   final String sender;
   final String text;
   final bool isMe;
-  Color bubbleColor;
-
-  Color getBubbleColor() {
-    isMe ? bubbleColor = Colors.lightBlueAccent : bubbleColor = Colors.white;
-    return bubbleColor;
-  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.all(10.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment:
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Text(
             sender,
@@ -187,13 +164,17 @@ class MessageBubble extends StatelessWidget {
             borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(30.0),
                 bottomLeft: Radius.circular(30.0),
-                bottomRight: Radius.circular(30.0)),
-            color: getBubbleColor(),
+                bottomRight: Radius.circular(30.0),
+                topRight: isMe ? Radius.circular(0.0) : Radius.circular(30.0)),
+            color: isMe ? Colors.lightBlueAccent : Colors.white,
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
               child: Text(
                 '$text',
-                style: TextStyle(fontSize: 25.0, color: Colors.white),
+                style: TextStyle(
+                  fontSize: 25.0,
+                  color: isMe ? Colors.white : Colors.black54,
+                ),
               ),
             ),
           ),
