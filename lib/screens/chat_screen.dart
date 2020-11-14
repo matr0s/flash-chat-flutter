@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 final _fireStore = FirebaseFirestore.instance;
+User logedInUser;
 
 class ChatScreen extends StatefulWidget {
   static const String id = 'chat_screen';
@@ -15,7 +16,6 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final messageTextController = TextEditingController();
   final _auth = FirebaseAuth.instance;
-  User logedInUser;
   String messageText;
 
   @override
@@ -24,9 +24,9 @@ class _ChatScreenState extends State<ChatScreen> {
     getCurrentUser();
   }
 
-  void getCurrentUser() async {
+  void getCurrentUser() {
     try {
-      final user = await _auth.currentUser;
+      final user = _auth.currentUser;
       if (user != null) {
         logedInUser = user;
       }
@@ -63,10 +63,9 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(
               icon: Icon(Icons.close),
               onPressed: () {
-                messageStream();
-                // _auth.signOut();
-                // Navigator.pop(context);
-                //Implement logout functionality
+                //  messageStream();
+                _auth.signOut();
+                Navigator.pop(context);
               }),
         ],
         title: Text('⚡️Chat'),
@@ -136,9 +135,12 @@ class MessagesStream extends StatelessWidget {
           for (var message in messages) {
             final messageText = message.data()['test'];
             final messageSender = message.data()['sender'];
+            final currentUser = logedInUser.email;
+
             final messageBubble = MessageBubble(
               sender: messageSender,
               text: messageText,
+              isMe: currentUser == messageSender,
             );
             messageBubbles.add(messageBubble);
           }
@@ -155,9 +157,17 @@ class MessagesStream extends StatelessWidget {
 }
 
 class MessageBubble extends StatelessWidget {
-  MessageBubble({this.sender, this.text});
+  MessageBubble({this.sender, this.text, this.isMe});
   final String sender;
   final String text;
+  final bool isMe;
+  Color bubbleColor;
+
+  Color getBubbleColor() {
+    isMe ? bubbleColor = Colors.lightBlueAccent : bubbleColor = Colors.white;
+    return bubbleColor;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -178,7 +188,7 @@ class MessageBubble extends StatelessWidget {
                 topLeft: Radius.circular(30.0),
                 bottomLeft: Radius.circular(30.0),
                 bottomRight: Radius.circular(30.0)),
-            color: Colors.lightBlueAccent,
+            color: getBubbleColor(),
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
               child: Text(
